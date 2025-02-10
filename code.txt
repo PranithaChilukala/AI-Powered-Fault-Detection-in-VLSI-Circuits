@@ -1,0 +1,76 @@
+project 1  AI based fault detection using VLSI
+
+
+%Author: Chilukala Pranitha
+clc; clear; close all;
+
+%% **Step 1: Generate Synthetic VLSI Fault Data**
+num_samples = 500;
+X = rand(num_samples, 2) * 10; % Two input features
+
+% Creating a 3-class problem (0, 1, 2)
+Y = randi([0, 2], num_samples, 1); 
+
+% Normalize Features
+X = normalize(X);
+
+%% **Step 2: Train Multi-Class SVM Model using `fitcecoc`**
+SVMModel = fitcecoc(X, Y); % Handles multi-class classification
+SVM_Predictions = predict(SVMModel, X);
+SVM_Accuracy = sum(SVM_Predictions == Y) / num_samples * 100;
+
+%% **Step 3: Train Neural Network for Fault Detection**
+net = patternnet([10 5]); % Two hidden layers (10, 5 neurons)
+net = train(net, X', Y'); 
+NN_Predictions = round(net(X')); % Convert to integer labels
+NN_Accuracy = sum(NN_Predictions == Y') / num_samples * 100;
+
+%% **Step 4: Display Fault Detection Accuracies**
+fprintf('Fault Detection Accuracy (SVM): %.2f%%\n', SVM_Accuracy);
+fprintf('Fault Detection Accuracy (Neural Network): %.2f%%\n', NN_Accuracy);
+
+%% **Step 5: Generate Contour Plot for Decision Boundary**
+[X1, X2] = meshgrid(linspace(min(X(:,1)), max(X(:,1)), 100), ...
+                     linspace(min(X(:,2)), max(X(:,2)), 100));
+
+grid_data = [X1(:), X2(:)];
+SVM_grid_pred = predict(SVMModel, grid_data);
+
+figure;
+contourf(X1, X2, reshape(SVM_grid_pred, size(X1)), 20);
+colorbar;
+hold on;
+scatter(X(:,1), X(:,2), 50, Y, 'filled');
+title('SVM Fault Detection Decision Boundary');
+xlabel('Feature 1');
+ylabel('Feature 2');
+hold off;
+
+%% **Step 6: Circuit Diagram Representation (Basic)**
+figure;
+hold on;
+axis([0 10 0 10]);
+axis off;
+
+% Draw AND Gate
+rectangle('Position', [3, 4, 2, 2], 'Curvature', [0.5, 1], 'EdgeColor', 'k', 'LineWidth', 2);
+
+% Inputs
+line([1 3], [5 5], 'Color', 'k', 'LineWidth', 2); % Input A
+line([1 3], [4 4], 'Color', 'k', 'LineWidth', 2); % Input B
+
+% Labels
+text(0.5, 5, 'A', 'FontSize', 12);
+text(0.5, 4, 'B', 'FontSize', 12);
+
+% Output Line
+line([5 7], [5, 5], 'Color', 'k', 'LineWidth', 2);
+text(7.2, 5, 'Output', 'FontSize', 12);
+
+% Fault Indicator
+plot(4, 4.5, 'ro', 'MarkerSize', 10, 'LineWidth', 2);
+text(4.2, 4.5, 'Fault Detected!', 'FontSize', 12, 'Color', 'r');
+
+title('VLSI Circuit with Fault Detection');
+hold off;
+drawnow;
